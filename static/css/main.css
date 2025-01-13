@@ -16,22 +16,14 @@ h1 {
     align-items: center;
 }
 
-/* Artists, Albums, Tracks header*/
+/* Artists Section header*/
 h2 {
     display: flex;
     justify-content: left;
     align-items: center;
 }
 
-/* search bar
-form {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-*/
-
-/* search bar */
+/* search bar styling */
 form {
     --padding: 14px; 
 
@@ -45,12 +37,14 @@ form {
 
 }
 
+/* styling when search bar is focused */
 form:focus-within {
     background:#2A2A2A;
     box-shadow: 0 0 4px #FCFCFC;
 
 }
 
+/* input field for search bar */
 .search-input {
     font-size: 20px;
     font-family: sans-serif;
@@ -62,19 +56,26 @@ form:focus-within {
     width: 300px;
 }
 
+/* search icon styling */
 .search-icon{
     color: #B2B2B2;
 }
 
 
+
+.add_circle{
+    color: #ccc;
+}
+
+
+/* grid layout for displaying artist results */
 .results-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
 }
 
-
-/* result img border */
+/* artist result image container */
 .result {
     border-radius: 10px;
     padding: 10px;
@@ -83,10 +84,10 @@ form:focus-within {
 
 /* artist img */
 .result .artist-image {
-    border-radius: 50%;
+    border-radius: 50%; /* circular */
 }
 
-/* result image */
+/* image inside result container */
 .result img {
     width: 150px;
     height: 150px;
@@ -109,6 +110,7 @@ form:focus-within {
     margin: 2px 0;
 }
 
+/* popup for selected artists */
 .popup {
     position: fixed;
     bottom: 20px;
@@ -118,28 +120,33 @@ form:focus-within {
     padding: 15px;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    max-width: 300px;
+    width: 325px;
+    max-width: 350px;
     overflow-y: auto;
     max-height: 300px;
 }
 
+/* header inside popup (Selected Artists) */
 .popup h3 {
     margin-top: 0;
 }
 
+/* list of selected artists in the popup */
 .popup ul {
     list-style: none;
     padding: 0;
 }
 
+/* individual list item in the popup */
 .popup ul li {
     display: flex;
     justify-content: space-between;
     margin-bottom: 5px;
 }
 
+/* button inside popup */
 .popup button {
-    background: #1db954;
+    background: #1ed760;
     color: white;
     border: none;
     padding: 5px 10px;
@@ -147,6 +154,57 @@ form:focus-within {
     cursor: pointer;
 }
 
+/* hover effect for button inside popup */
 .popup button:hover {
     background: #14833b;
 }
+
+/* Playlist item styling */
+.playlist-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #1F1F1F;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Playlist image */
+.playlist-item .playlist-image {
+    width: 75px;
+    height: 75px;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+/* Playlist information */
+.playlist-item .playlist-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: #FFFFFF;
+}
+
+/* Title styling */
+.playlist-info .playlist-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0 0 5px;
+}
+
+/* Artist styling */
+.playlist-info .playlist-artist {
+    font-size: 14px;
+    color: #B2B2B2;
+    margin: 0 0 3px;
+}
+
+/* Album styling */
+.playlist-info .playlist-album {
+    font-size: 14px;
+    color: #666666;
+    margin: 0;
+}
+    

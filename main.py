@@ -6,15 +6,15 @@ import json
 import random
 from dotenv import load_dotenv
 
-# Flask app initialization
+# flask app initialization
 app = Flask(__name__)
 
-# Load environment variables
+# environment variables
 load_dotenv()
 client_id = os.getenv("CLIENT_ID")
 client_secret = os.getenv("CLIENT_SECRET")
 
-# Function to get Spotify API token
+# get spotify API token
 def get_token():
     auth_string = f"{client_id}:{client_secret}"
     auth_bytes = auth_string.encode("utf-8")
@@ -30,11 +30,11 @@ def get_token():
     token = json.loads(result.content)["access_token"]
     return token
 
-# Function to construct authorization header
+# construct authorization header
 def get_auth_header(token):
     return {"Authorization": f"Bearer {token}"}
 
-# Function to search Spotify API
+# search Spotify API
 def search_spotify(token, query):
     url = "https://api.spotify.com/v1/search"
     headers = get_auth_header(token)
@@ -51,25 +51,26 @@ def fetch_artist_tracks(token, artist_id):
     tracks = []
     headers = get_auth_header(token)
 
-    # Fetch artist's albums
+    # fetch artist's albums
     url = f"https://api.spotify.com/v1/artists/{artist_id}/albums"
-    params = {"include_groups": "album,appears_on", "limit": 15}  # Fetch up to 15 albums to ensure diversity
-    albums_response = get(url, headers=headers, params=params).json()
-    albums = albums_response.get("items", [])
+    params = {"include_groups": "album,single,appears_on,compilation", "limit": 15}  # fetch up to 15 albums
+    albums_response = get(url, headers=headers, params=params).json()   # request artist albums in json
+    albums = albums_response.get("items", [])   # parse json
 
+    # fetch tracks from each album
     for album in albums:
         album_id = album["id"]
-
-        # Fetch tracks for the album
         album_tracks_url = f"https://api.spotify.com/v1/albums/{album_id}/tracks"
-        album_tracks_response = get(album_tracks_url, headers=headers).json()
+        album_tracks_response = get(album_tracks_url, headers=headers).json()   # request tracks from album in json
 
+        # fetch track information to find popularity
         for track in album_tracks_response.get("items", []):
-            # Fetch track details to get popularity
             track_url = f"https://api.spotify.com/v1/tracks/{track['id']}"
-            track_details = get(track_url, headers=headers).json()
+            track_details = get(track_url, headers=headers).json()  # request track details in json
 
-            if track_details.get("popularity", 0) > 40:  # Only include tracks with popularity > 40
+            # get details for each track that has a popularity > 30 and < 80
+            # does not add the most popular tracks in playlist (> 80)
+            if track_details.get("popularity", 0) > 30 & track_details.get("popularity", 0) < 80: 
                 tracks.append({
                     "name": track_details["name"],
                     "artist": ", ".join([artist["name"] for artist in track_details["artists"]]),
@@ -80,7 +81,7 @@ def fetch_artist_tracks(token, artist_id):
     return tracks
 
 
-
+# creates playlist based on artist chosen
 @app.route("/create_playlist", methods=["POST"])
 def create_playlist():
     artist_ids = request.json.get("artist_ids", [])
@@ -96,8 +97,8 @@ def create_playlist():
         print(f"Artist {artist_id} has {len(artist_tracks)} tracks.")  # Debug log
         all_tracks.append(artist_tracks)
 
-    # target total number of songs
-    max_songs = 30
+    # target total number of songs, random number between 20 to 30
+    max_songs = random.randint(20, 30)
     num_artists = len(artist_ids)
     songs_per_artist = max_songs // num_artists
 
