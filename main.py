@@ -134,10 +134,8 @@ def create_playlist():
     playlist = playlist[:max_songs]
     print(f"Final playlist has {len(playlist)} tracks.")  # Debug log
 
-    return jsonify({"playlist": playlist})
-
-
-
+    final_playlist = jsonify({"playlist": playlist})
+    return final_playlist
 
 
 

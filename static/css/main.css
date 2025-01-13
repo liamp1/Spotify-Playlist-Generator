@@ -63,10 +63,6 @@ form:focus-within {
 
 
 
-.add_circle{
-    color: #ccc;
-}
-
 
 /* grid layout for displaying artist results */
 .results-grid {
@@ -207,4 +203,43 @@ form:focus-within {
     color: #666666;
     margin: 0;
 }
-    
+
+
+
+.add_circle{
+    color: #b3b3b3;
+}
+
+.select-icon:hover{
+    transform: scale(1.1); /* Enlarge slightly */
+    color: #FFFFFF;
+}
+
+.select-icon {
+    position: absolute;
+    bottom: 0px; /* Position 10px from the bottom */
+    right: 0px; /* Position 10px from the right */
+    font-size: 24px; /* Icon size */
+    color: #B2B2B2; /* Default color */
+    background-color: #121212; /* Background for better visibility */
+    border-radius: 50%; /* Circular button */
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.3s, color 0.3s; /* Smooth transition */
+}
+
+.image-container {
+    position: relative; /* Enable absolute positioning for child elements */
+    display: inline-block; /* Ensure the size wraps around the image */
+    width: 150px; /* Match image width */
+    height: 150px; /* Match image height */
+    overflow: hidden; /* Prevent content overflow */
+}
+
+/* Style the artist image */
+.artist-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+}
+

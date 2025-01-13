@@ -12,12 +12,6 @@
     <div class="content">
         <h1>Spotify Playlist Generator</h1>
 
-        <!--
-        <form action="/" method="POST">
-            <input type="text" name="content" id="content" placeholder="Search Spotify" required>
-            <input type="submit" value="Search">
-        </form>
-        -->
         <!-- Search Form -->
         <form action="/" method = "POST">
             <span class="search-icon material-symbols-outlined">search</span>
@@ -35,11 +29,13 @@
             <div class="results-grid">
                 {% for artist in artists %}
                 <div class="result">
-                    <img src="{{ artist.image }}" alt="{{ artist.name }}" class="artist-image">
+                    <div class="image-container">
+                        <img src="{{ artist.image }}" alt="{{ artist.name }}" class="artist-image">
+                        <span class="select-icon material-symbols-outlined" onclick="toggleIcon(this, '{{ artist.name }}', '{{ artist.id }}')">add_circle</span>
+                    </div>
                     <p class="title">{{ artist.name }}</p>
-                    <!-- <button onclick="addArtist('{{ artist.name }}', '{{ artist.id }}')">Select</button> -->
-                    <span class="select-icon material-symbols-outlined" style="font-variation-settings: 'FILL' 0;" onclick="toggleIcon(this, '{{ artist.name }}', '{{ artist.id }}')">add_circle</span>
                 </div>
+                
                 {% endfor %}
             </div>
             {% endif %}
@@ -64,26 +60,26 @@
     <script>
         const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
 
-        // Add artist to the list
+        // add artist to the list
         function addArtist(name, id) {
             if (!selectedArtists.find(artist => artist.id === id)) {
                 selectedArtists.push({ name, id });
-                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // Persist in localStorage
+                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // persist in localStorage
                 updatePopup();
             }
         }
 
-        // Remove artist from the list
+        // remove artist from the list
         function removeArtist(id) {
             const index = selectedArtists.findIndex(artist => artist.id === id);
             if (index !== -1) {
                 selectedArtists.splice(index, 1);
-                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // Update localStorage
+                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // update localStorage
                 updatePopup();
             }
         }
 
-        // Update the popup display
+        // update the popup display
         function updatePopup() {
             const popupList = document.getElementById("selectedArtists");
             popupList.innerHTML = "";
@@ -97,12 +93,12 @@
             });
         }
 
-        // Populate the popup on page load
+        // populate the popup on page load
         window.onload = function () {
             updatePopup();
         };
 
-        // Create playlist
+        // create playlist
         async function createPlaylist() {
             if (selectedArtists.length === 0) {
                 alert("Please select at least one artist!");
@@ -117,7 +113,7 @@
             });
 
             const data = await response.json();
-            console.log("Playlist data:", data.playlist); // Log the playlist data
+            console.log("Playlist data:", data.playlist); // log the playlist data
             if (data.error) {
                 alert(data.error);
             } else {
@@ -126,7 +122,7 @@
         }
 
 
-        // Display playlist on the page
+        // display playlist on the page
         function displayPlaylist(playlist) {
             const playlistItems = document.getElementById("playlistItems");
             playlistItems.innerHTML = "";
@@ -136,7 +132,7 @@
                 return;
             }
 
-            // Display each track
+            // display each track
             playlist.forEach(track => {
                 const div = document.createElement("div");
                 div.classList.add("playlist-item");
@@ -154,20 +150,20 @@
 
         function toggleIcon(element, name, id) {
             if (element.textContent === 'add_circle') {
-                // Change icon to filled check_circle and make it green
+                // change icon to filled check_circle and make it green
                 element.textContent = 'check_circle';
-                element.style.color = '#1ed760'; // Spotify green
-                element.style.fontVariationSettings = "'FILL' 1"; // Filled variant
+                element.style.color = '#1ed760';
+                element.style.fontVariationSettings = "'FILL' 1"; // filled variant
 
-                // Add artist to the list
+                // add artist to the list
                 addArtist(name, id);
             } else {
-                // Change icon back to unfilled add_circle
+                // change icon back to unfilled add_circle
                 element.textContent = 'add_circle';
                 element.style.color = ''; // Revert to default
-                element.style.fontVariationSettings = "'FILL' 0"; // Outline variant
+                element.style.fontVariationSettings = "'FILL' 0"; // outline variant
 
-                // Remove artist from the list
+                // remove artist from the list
                 removeArtist(id);
             }
         }
