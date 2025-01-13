@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=search" />
+    <title>Spotify Search</title>
+</head>
+<body>
+    <div class="content">
+        <h1>Spotify Search</h1>
+
+        <!--
+        <form action="/" method="POST">
+            <input type="text" name="content" id="content" placeholder="Search Spotify" required>
+            <input type="submit" value="Search">
+        </form>
+        -->
+        <!-- Search Form -->
+        <form action="/" method = "POST">
+            <span class="search-icon material-symbols-outlined">search</span>
+            <input class="search-input" type="search" name="content" id="content" placeholder="What are you looking for?">
+        </form>
+
+        {% if error %}
+        <p style="color: red;">{{ error }}</p>
+        {% endif %}
+
+        <!-- Results Section -->
+        <div class="results">
+            {% if artists %}
+            <h2>Artists</h2>
+            <div class="results-grid">
+                {% for artist in artists %}
+                <div class="result">
+                    <img src="{{ artist.image }}" alt="{{ artist.name }}" class="artist-image">
+                    <p class="title">{{ artist.name }}</p>
+                    <button onclick="addArtist('{{ artist.name }}', '{{ artist.id }}')">Select</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+
+        <!-- Popup for selected artists -->
+        <div class="popup" id="popup">
+            <h3>Selected Artists</h3>
+            <ul id="selectedArtists"></ul>
+            <button onclick="createPlaylist()">Create Playlist</button>
+        </div>
+
+        <!-- Playlist Section -->
+        <div class="playlist" id="playlist">
+            <h2>Your Playlist</h2>
+            <div id="playlistItems"></div>
+        </div>
+
+    </div>
+
+    <script>
+        const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
+
+        // Add artist to the list
+        function addArtist(name, id) {
+            if (!selectedArtists.find(artist => artist.id === id)) {
+                selectedArtists.push({ name, id });
+                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // Persist in localStorage
+                updatePopup();
+            }
+        }
+
+        // Remove artist from the list
+        function removeArtist(id) {
+            const index = selectedArtists.findIndex(artist => artist.id === id);
+            if (index !== -1) {
+                selectedArtists.splice(index, 1);
+                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // Update localStorage
+                updatePopup();
+            }
+        }
+
+        // Update the popup display
+        function updatePopup() {
+            const popupList = document.getElementById("selectedArtists");
+            popupList.innerHTML = "";
+            selectedArtists.forEach(artist => {
+                const li = document.createElement("li");
+                li.innerHTML = `
+                    ${artist.name}
+                    <button onclick="removeArtist('${artist.id}')">Remove</button>
+                `;
+                popupList.appendChild(li);
+            });
+        }
+
+        // Populate the popup on page load
+        window.onload = function () {
+            updatePopup();
+        };
+
+        // Create playlist
+        async function createPlaylist() {
+            if (selectedArtists.length === 0) {
+                alert("Please select at least one artist!");
+                return;
+            }
+
+            const artistIds = selectedArtists.map(artist => artist.id);
+            const response = await fetch("/create_playlist", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ artist_ids: artistIds })
+            });
+
+            const data = await response.json();
+            console.log("Playlist data:", data.playlist); // Log the playlist data
+            if (data.error) {
+                alert(data.error);
+            } else {
+                displayPlaylist(data.playlist);
+            }
+        }
+
+
+        // Display playlist on the page
+        function displayPlaylist(playlist) {
+            const playlistItems = document.getElementById("playlistItems");
+            playlistItems.innerHTML = "";
+
+            if (!playlist || playlist.length === 0) {
+                playlistItems.innerHTML = "<p>No songs available for the selected artists.</p>";
+                return;
+            }
+
+            // Display each track
+            playlist.forEach(track => {
+                const div = document.createElement("div");
+                div.classList.add("playlist-item");
+                div.innerHTML = `
+                    <img src="${track.image || 'https://via.placeholder.com/100'}" alt="${track.album}">
+                    <div>
+                        <p><strong>${track.name}</strong></p>
+                        <p>by ${track.artist}</p>
+                        <p>from ${track.album}</p>
+                    </div>
+                `;
+                playlistItems.appendChild(div);
+            });
+
+            console.log("Playlist successfully displayed with", playlist.length, "tracks."); // Confirmation
+        }
+
+
+
+
+    </script>
+
+
+
+</body>
+</html>

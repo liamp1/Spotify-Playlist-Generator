@@ -1,0 +1,152 @@
+body {
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: sans-serif;
+    
+    background-color: #121212;
+    color: #FFFFFF;
+}
+
+/* Spotify Search header*/
+h1 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Artists, Albums, Tracks header*/
+h2 {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+}
+
+/* search bar
+form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+*/
+
+/* search bar */
+form {
+    --padding: 14px; 
+
+    
+    display:flex;
+    align-items: center;
+    padding: var(--padding);
+    border-radius: 28px;
+    background: #1F1F1F;
+    transition: background 0.5s, border-color 0.5s;
+
+}
+
+form:focus-within {
+    background:#2A2A2A;
+    box-shadow: 0 0 4px #FCFCFC;
+
+}
+
+.search-input {
+    font-size: 20px;
+    font-family: sans-serif;
+    color: #B2B2B2;
+    margin-left: var(--padding);
+    outline: none;
+    border: none;
+    background: transparent;
+    width: 300px;
+}
+
+.search-icon{
+    color: #B2B2B2;
+}
+
+
+.results-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+
+/* result img border */
+.result {
+    border-radius: 10px;
+    padding: 10px;
+    width: 150px;
+}
+
+/* artist img */
+.result .artist-image {
+    border-radius: 50%;
+}
+
+/* result image */
+.result img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+/* title styling (album/track names) */
+.result .title {
+    font-size: 18px; /* larger font for titles */
+    margin: 0;
+
+}
+
+/* subtext styling (artist and album references) */
+.result .subtext {
+    font-size: 14px; /* smaller font for artist and album references */
+    color: #666; /* lighter color for subtext */
+    margin: 2px 0;
+}
+
+.popup {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #1F1F1F;
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    max-width: 300px;
+    overflow-y: auto;
+    max-height: 300px;
+}
+
+.popup h3 {
+    margin-top: 0;
+}
+
+.popup ul {
+    list-style: none;
+    padding: 0;
+}
+
+.popup ul li {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.popup button {
+    background: #1db954;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.popup button:hover {
+    background: #14833b;
+}
