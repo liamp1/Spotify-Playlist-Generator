@@ -275,7 +275,7 @@ def export_playlist():
     session.pop("playlist", None)
 
     return jsonify({
-        "message": "Playlist created successfully!",
+        "message": "Playlist exported successfully!",
         "playlist_url": created_playlist.get("external_urls", {}).get("spotify", "#")
     })
 
