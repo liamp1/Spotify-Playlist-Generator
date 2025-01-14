@@ -12,7 +12,7 @@
     <div class="content">
         <h1>Playlist Generator for Spotify</h1>
 
-        <!-- Search Form -->
+        <!-- search bar -->
         <form action="/start" method = "POST">
             <span class="search-icon material-symbols-outlined">search</span>
             <input class="search-input" type="search" name="content" id="content" placeholder="What are you looking for?">
@@ -22,7 +22,7 @@
         <p style="color: red;">{{ error }}</p>
         {% endif %}
 
-        <!-- Results Section -->
+        <!-- results section -->
         <div class="results">
             {% if artists %}
             <h2>Artists</h2>
@@ -41,8 +41,7 @@
             {% endif %}
         </div>
 
-
-        <!-- Popup for selected artists -->
+        <!-- window for selected artists -->
         <div class="popup" id="popup">
             <h3>Selected Artists</h3>
             <ul id="selectedArtists"></ul>
@@ -53,21 +52,37 @@
         </div>
         
 
-        <!-- Playlist Section -->
+        <!-- playlist section -->
         <div class="playlist" id="playlist">
             <div class="playlist-header">
                 <h2>Your Playlist</h2>
                 <button class="export-button" onclick="exportPlaylist()">Export Playlist</button>
             </div>
-            <div id="playlistItems"></div>
+            <div id="playlistItems">
+                {% if playlist %}
+                    {% for track in playlist %}
+                        <div class="playlist-item">
+                            <img src="{{ track.image or 'https://via.placeholder.com/100' }}" alt="{{ track.album }}" class="playlist-image">
+                            <div class="playlist-info">
+                                <p class="playlist-title">{{ track.name }}</p>
+                                <p class="playlist-artist">{{ track.artist }}</p>
+                                <p class="playlist-album">{{ track.album }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No playlist available. Start by searching for artists!</p>
+                {% endif %}
+            </div>
         </div>
 
-        <!-- Popup Notification -->
-    <div id="popupNotification" class="popup-notification hidden">
-        <span id="popupMessage"></span>
-        <a id="popupLink" href="#" target="_blank" class="popup-link">View Playlist</a>
-    </div>
+        
 
+        <!-- popup notification -->
+        <div id="popupNotification" class="popup-notification hidden">
+            <span id="popupMessage"></span>
+            <a id="popupLink" href="#" target="_blank" class="popup-link">View Playlist</a>
+        </div>
     </div>
 
     <script>
@@ -75,58 +90,43 @@
 
         // add artist to the list
         function addArtist(name, id) {
-            const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
             if (!selectedArtists.find(artist => artist.id === id)) {
-                selectedArtists.push({ name, id }); // Add new artist if not already in the list
-                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists));
-                updatePopup(); // Re-render the popup
+                selectedArtists.push({ name, id });
+                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // persist in localStorage
+                updatePopup();  // ensure the popup UI is updated accordingly
             }
         }
-
 
         // remove artist from the list
         function removeArtist(id) {
-            const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
-            const updatedArtists = selectedArtists.filter(artist => artist.id !== id);
-            localStorage.setItem("selectedArtists", JSON.stringify(updatedArtists));
-            updatePopup(); // Re-render the popup
+            const index = selectedArtists.findIndex(artist => artist.id === id);
+            if (index !== -1) {
+                selectedArtists.splice(index, 1);
+                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // update localStorage
+                updatePopup();  // ensure the popup UI is updated accordingly
+            }
         }
 
-
-        // Clear selected artists from localStorage on page load
+        // clear selected artists from localStorage on page load
         window.onload = function () {
-            const isNewSession = !localStorage.getItem("sessionInitialized");
-
-            if (isNewSession) {
-                localStorage.setItem("selectedArtists", JSON.stringify([])); // Reset the list
-                localStorage.setItem("sessionInitialized", "true"); // Mark session as initialized
-            }
-
-            updatePopup(); // Render the current list of selected artists
+            localStorage.removeItem("selectedArtists");
+            updatePopup(); // ensure the popup UI is updated accordingly
         };
 
-
-        // Update the popup to reflect the current state
+        // update the popup to reflect the current state
         function updatePopup() {
             const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
             const popupList = document.getElementById("selectedArtists");
-            popupList.innerHTML = ""; // Clear the current list
-
-            if (selectedArtists.length === 0) {
-                popupList.innerHTML = "<p>No artists selected.</p>"; // Optional placeholder text
-            } else {
-                selectedArtists.forEach(artist => {
-                    const li = document.createElement("li");
-                    li.innerHTML = `
-                        ${artist.name}
-                        <button onclick="removeArtist('${artist.id}')">Remove</button>
-                    `;
-                    popupList.appendChild(li);
-                });
-            }
+            popupList.innerHTML = "";
+            selectedArtists.forEach(artist => {
+                const li = document.createElement("li");
+                li.innerHTML = `
+                    ${artist.name}
+                    <button onclick="removeArtist('${artist.id}')">Remove</button>
+                `;
+                popupList.appendChild(li);
+            });
         }
-
-
 
         // create playlist
         async function createPlaylist() {
@@ -138,9 +138,10 @@
                 spinner.classList.remove("hidden");
                 createButton.disabled = true;
 
+                // Check if any artists are selected
                 if (selectedArtists.length === 0) {
                     showPopupNotification("Please select at least one artist!");
-                    return;
+                    return; // Stop further execution
                 }
 
                 const artistIds = selectedArtists.map(artist => artist.id);
@@ -158,67 +159,71 @@
                 }
             } catch (error) {
                 console.error("Error creating playlist:", error);
-
                 showPopupNotification("Failed to create playlist. Please try again.");
             } finally {
                 // Hide spinner and enable the button
                 spinner.classList.add("hidden");
                 createButton.disabled = false;
-                showPopupNotification("Playlist created successfully!");
+
+                // Only show "Playlist created successfully!" if a playlist was actually created
+                if (selectedArtists.length > 0) {
+                    showPopupNotification("Playlist created successfully!");
+                }
             }
         }
+
 
         async function exportPlaylist() {
             try {
-                const response = await fetch("/export_playlist");
-                const data = await response.json();
+                const response = await fetch("/export_playlist", {
+                    method: "GET",
+                    redirect: "manual", // Ensure redirects are detected
+                });
 
-                if (response.status == 400 && data.error == "No playlist available to export") {
-                    showPopupNotification("No playlist available to export");
-                }
-                else if (data.error) {
-                    alert(`Error: ${data.error}`);
-                    if (data.error.includes("login")) {
-                        window.location.href = "/login";
-                    }
-                } else if (data.message && data.playlist_url) {
-                    showPopupNotification(data.message, data.playlist_url);
+                if (response.type === "opaqueredirect") {
+                    // Redirect to Spotify manually
+                    window.location.href = response.url;
                 } else {
-                    showPopupNotification("An unknown error occurred while exporting the playlist.");
+                    const data = await response.json();
+                    console.log(data); // Debug information
                 }
             } catch (error) {
                 console.error("Error exporting playlist:", error);
-                showPopupNotification("Failed to export the playlist. Please try again.");
             }
         }
 
+
+
+
+
+
+        // pop up notification at the bottom
         function showPopupNotification(message, url = null) {
             const popup = document.getElementById("popupNotification");
             const popupMessage = document.getElementById("popupMessage");
             const popupLink = document.getElementById("popupLink");
 
-            // Update message
+            // update message
             popupMessage.textContent = message;
 
-            // Conditionally display or hide the link
+            // conditionally display or hide the link
             if (url) {
                 popupLink.href = url;
-                popupLink.style.display = "inline"; // Show the link if a URL is provided
+                popupLink.style.display = "inline"; // show the link if a URL is provided
             } else {
-                popupLink.style.display = "none"; // Hide the link if no URL is provided
+                popupLink.style.display = "none"; // hide the link if no URL is provided
             }
 
-            // Show popup
+            // show popup
             popup.classList.remove("hidden");
             popup.classList.add("visible");
 
-            // Hide popup after 5 seconds
+            // hide popup after 6 seconds
             setTimeout(() => {
                 popup.classList.remove("visible");
                 popup.classList.add("hidden");
-            }, 7000);
+            }, 6000);
         }
-
 
         // display playlist on the page
         function displayPlaylist(playlist) {
@@ -230,7 +235,6 @@
                 return;
             }
 
-            // display each track
             playlist.forEach(track => {
                 const div = document.createElement("div");
                 div.classList.add("playlist-item");
@@ -245,6 +249,7 @@
                 playlistItems.appendChild(div);
             });
         }
+
 
         function toggleIcon(element, name, id) {
             if (element.textContent === 'add_circle') {
@@ -265,17 +270,6 @@
                 removeArtist(id);
             }
         }
-
-        
-
-
-
-
-
-
     </script>
-
-
-
 </body>
 </html>

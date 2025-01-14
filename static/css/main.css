@@ -9,14 +9,14 @@ body {
     color: #FFFFFF;
 }
 
-/* Spotify Search header*/
+/* spotify search header*/
 h1 {
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-/* Artists Section header*/
+/* artists section header*/
 h2 {
     display: flex;
     justify-content: left;
@@ -26,8 +26,6 @@ h2 {
 /* search bar styling */
 form {
     --padding: 14px; 
-
-    
     display:flex;
     align-items: center;
     padding: var(--padding);
@@ -60,8 +58,6 @@ form:focus-within {
 .search-icon{
     color: #B2B2B2;
 }
-
-
 
 
 /* grid layout for displaying artist results */
@@ -156,7 +152,7 @@ form:focus-within {
     transition: 0.3s;
 }
 
-/* Playlist item styling */
+/* playlist item styling */
 .playlist-item {
     display: flex;
     align-items: center;
@@ -168,7 +164,7 @@ form:focus-within {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Playlist image */
+/* playlist image */
 .playlist-item .playlist-image {
     width: 75px;
     height: 75px;
@@ -176,7 +172,7 @@ form:focus-within {
     border-radius: 5px;
 }
 
-/* Playlist information */
+/* playlist information */
 .playlist-item .playlist-info {
     display: flex;
     flex-direction: column;
@@ -184,36 +180,36 @@ form:focus-within {
     color: #FFFFFF;
 }
 
-/* Title styling */
+/* song title styling */
 .playlist-info .playlist-title {
     font-size: 16px;
     font-weight: bold;
     margin: 0 0 5px;
 }
 
-/* Artist styling */
+/* artist title styling */
 .playlist-info .playlist-artist {
     font-size: 14px;
     color: #B2B2B2;
     margin: 0 0 3px;
 }
 
-/* Album styling */
+/* album title styling */
 .playlist-info .playlist-album {
     font-size: 14px;
     color: #666666;
     margin: 0;
 }
 
-/* Playlist header styling */
+/* playlist header styling */
 .playlist-header {
     display: flex;
-    justify-content: space-between; /* Spread the title and button */
+    justify-content: space-between; /* spread the title and button */
     align-items: center;
-    margin-bottom: 10px; /* Add spacing below the header */
+    margin-bottom: 10px; 
 }
 
-/* Export button styling */
+/* Export Playlist button styling */
 .export-button {
     background-color: #2a2a2a; 
     color: #FFFFFF;
@@ -226,30 +222,34 @@ form:focus-within {
     transition: background-color 0.3s;
 }
 
+/* Export Playlist button hover */
 .export-button:hover {
     background-color: #333333; 
     transition: 0.3s;
 }
 
+/* add circle icon */
 .add_circle{
     color: #b3b3b3;
 }
 
+/* add circle hover */
 .select-icon:hover{
-    transform: scale(1.1); /* Enlarge slightly */
+    transform: scale(1.1); /* enlarge slightly */
     color: #FFFFFF;
 }
 
+/* add artist select button next to artist image */
 .select-icon {
     position: absolute;
-    bottom: 0px; /* Position 10px from the bottom */
-    right: 0px; /* Position 10px from the right */
-    font-size: 24px; /* Icon size */
-    color: #B2B2B2; /* Default color */
-    background-color: #121212; /* Background for better visibility */
-    border-radius: 50%; /* Circular button */
+    bottom: 0px; 
+    right: 0px; 
+    font-size: 24px; 
+    color: #B2B2B2; 
+    background-color: #121212;
+    border-radius: 50%;
     cursor: pointer;
-    transition: transform 0.2s, background-color 0.3s, color 0.3s; /* Smooth transition */
+    transition: transform 0.2s, background-color 0.3s, color 0.3s;
 }
 
 .image-container {
@@ -260,7 +260,7 @@ form:focus-within {
     overflow: hidden; /* Prevent content overflow */
 }
 
-/* Style the artist image */
+/* style the artist image */
 .artist-image {
     width: 100%;
     height: 100%;
@@ -268,6 +268,7 @@ form:focus-within {
     border-radius: 10px;
 }
 
+/* buttons for Select Artists windows */
 .buttons {
     display: flex;
     gap: 20px;
@@ -275,6 +276,7 @@ form:focus-within {
     margin-top: 20px;
 }
 
+/* landing page button */
 .btn {
     background-color: #1ed762;
     color: white;
@@ -289,7 +291,7 @@ form:focus-within {
     background-color: #7ade7c;
 }
 
-/* Popup Notification */
+/* popup notification */
 .popup-notification {
     position: fixed;
     bottom: 20px;
@@ -330,21 +332,21 @@ form:focus-within {
     text-decoration: none;
 }
 
-/* Spinner Styles */
+/* spinner styles */
 .spinner {
     width: 20px;
     height: 20px;
     border: 3px solid rgba(255, 255, 255, 0.3);
-    border-top: 3px solid #1DB954; /* Green color for the spinner */
+    border-top: 3px solid #1DB954; /* green color for the spinner */
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
 }
 
 .hidden {
-    display: none; /* Hide the spinner by default */
+    display: none; /* hide the spinner by default */
 }
 
-/* Spinner Animation */
+/* spinner animation */
 @keyframes spin {
     0% {
         transform: rotate(0deg);
