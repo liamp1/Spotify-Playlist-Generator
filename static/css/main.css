@@ -142,17 +142,18 @@ form:focus-within {
 
 /* button inside popup */
 .popup button {
-    background: #1ed760;
+    background: #2a2a2a;
     color: white;
     border: none;
     padding: 5px 10px;
-    border-radius: 5px;
+    border-radius: 20px;
     cursor: pointer;
 }
 
 /* hover effect for button inside popup */
 .popup button:hover {
-    background: #14833b;
+    background: #333333;
+    transition: 0.3s;
 }
 
 /* Playlist item styling */
@@ -204,7 +205,31 @@ form:focus-within {
     margin: 0;
 }
 
+/* Playlist header styling */
+.playlist-header {
+    display: flex;
+    justify-content: space-between; /* Spread the title and button */
+    align-items: center;
+    margin-bottom: 10px; /* Add spacing below the header */
+}
 
+/* Export button styling */
+.export-button {
+    background-color: #2a2a2a; 
+    color: #FFFFFF;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.export-button:hover {
+    background-color: #333333; 
+    transition: 0.3s;
+}
 
 .add_circle{
     color: #b3b3b3;

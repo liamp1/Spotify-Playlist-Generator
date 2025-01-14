@@ -10,7 +10,7 @@
     
 <body>
     <div class="content">
-        <h1>Spotify Playlist Generator</h1>
+        <h1>Playlist Generator for Spotify</h1>
 
         <!-- Search Form -->
         <form action="/" method = "POST">
@@ -51,9 +51,14 @@
 
         <!-- Playlist Section -->
         <div class="playlist" id="playlist">
-            <h2>Your Playlist</h2>
+            <div class="playlist-header">
+                <h2>Your Playlist</h2>
+                <button class="export-button" onclick="window.location.href='/spotify-login'">Export Playlist</button>
+
+            </div>
             <div id="playlistItems"></div>
         </div>
+
 
     </div>
 
