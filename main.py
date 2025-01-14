@@ -17,10 +17,15 @@ app = Flask(__name__)
 load_dotenv()
 client_id = os.getenv("CLIENT_ID")
 client_secret = os.getenv("CLIENT_SECRET")
+app.secret_key = os.getenv("SECRET_KEY")    # secret key for flask app
 redirect_uri = "http://localhost:5000/callback"
 auth_url = "https://accounts.spotify.com/authorize"
 api_base_url = "https://api.spotify.com/v1/"
 token_url = "https://accounts.spotify.com/api/token"
+
+app.config["SESSION_COOKIE_SECURE"] = False  # Use True in production with HTTPS
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 # get spotify API token
 def get_token():
@@ -33,9 +38,25 @@ def get_token():
         "Content-Type": "application/x-www-form-urlencoded"
     }
     data = {"grant_type": "client_credentials"}
+
+    # Make the API request
     result = post(token_url, headers=headers, data=data)
-    token = json.loads(result.content)["access_token"]
+
+    # Log the response for debugging
+    print(f"Spotify API Response Status Code: {result.status_code}")
+    print(f"Spotify API Response Content: {result.content}")
+
+    # Handle errors gracefully
+    if result.status_code != 200:
+        raise ValueError("Failed to retrieve access token from Spotify API.")
+
+    # Parse and return the access token
+    token = json.loads(result.content).get("access_token")
+    if not token:
+        raise KeyError("No access_token found in Spotify API response.")
     return token
+
+
 
 # construct authorization header
 def get_auth_header(token):
@@ -44,25 +65,23 @@ def get_auth_header(token):
 
 @app.route("/login")
 def login():
+    """Spotify login flow."""
     scope = "playlist-modify-private"
-
     params = {
         "client_id": client_id,
-        "repsonse_type": 'code',
+        "response_type": 'code',
         "scope": scope,
         "redirect_uri": redirect_uri,
         "show_dialog": True
     }
-
     authorization_url = f"{auth_url}?{urllib.parse.urlencode(params)}"
-
     return redirect(authorization_url)
 
 @app.route("/callback")
 def callback():
+    """Handle Spotify authentication callback."""
     if "error" in request.args:
         return jsonify({"error": request.args["error"]})
-    
     if "code" in request.args:
         req_body = {
             "code": request.args["code"],
@@ -71,15 +90,15 @@ def callback():
             "client_id": client_id,
             "client_secret": client_secret
         }
-
-        reponse = requests.post(token_url, data=req_body)
-        token_info = reponse.json()
-
+        response = requests.post(token_url, data=req_body)
+        token_info = response.json()
         session["access_token"] = token_info["access_token"]
         session["refresh_token"] = token_info["refresh_token"]
         session["expires_at"] = datetime.now().timestamp() + token_info["expires_in"]
 
-        return redirect("/export_playlist")
+        # Redirect back to saved route or search page
+        redirect_url = session.pop("redirect_after_login", "/start")
+        return redirect(redirect_url)
 
 
 
@@ -127,7 +146,8 @@ def fetch_artist_tracks(token, artist_id):
                     "artist": ", ".join([artist["name"] for artist in track_details["artists"]]),
                     "album": track_details["album"]["name"],
                     "image": track_details["album"]["images"][0]["url"] if track_details["album"]["images"] else None,
-                    "popularity": track_details["popularity"]
+                    "popularity": track_details["popularity"],
+                    "uri": track_details["uri"]
                 })
     return tracks
 
@@ -185,55 +205,62 @@ def create_playlist():
     playlist = playlist[:max_songs]
     print(f"Final playlist has {len(playlist)} tracks.")  # Debug log
 
-    final_playlist = jsonify({"playlist": playlist})
-    return final_playlist
+
+
+    print(f"Session data at /create_playlist: {session}")
+
+
+
+    session["playlist"] = playlist
+    session.modified = True
+    print(f"Playlist stored in session: {session.get('playlist')}")
+
+    return jsonify({"playlist": playlist})
+
 
 @app.route("/export_playlist")
 def export_playlist():
-    # Ensure the playlist exists in the session
-    final_playlist = session.get('final_playlist')
-    if not final_playlist:
-        return jsonify({"error": "No playlist found in session"}), 400
-
-    access_token = session.get('access_token')
+    access_token = session.get("access_token")
     if not access_token:
-        return redirect('/login')  # Redirect to login if access token is missing
+        session["redirect_after_login"] = "/export_playlist"
+        return redirect("/login")
 
-    # Get the user profile
+    playlist = session.get("playlist")
+    if not playlist:
+        return jsonify({"error": "No playlist available to export"}), 400
+
     headers = get_auth_header(access_token)
     user_profile_response = get(f"{api_base_url}me", headers=headers)
-
     if user_profile_response.status_code != 200:
         return jsonify({"error": "Failed to fetch user profile"}), 400
 
     user_profile = user_profile_response.json()
-    user_id = user_profile.get('id')
+    user_id = user_profile.get("id")
     if not user_id:
         return jsonify({"error": "User ID not found"}), 400
 
-    # Create a new playlist
     playlist_name = f"Generated Playlist {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     create_playlist_body = {
         "name": playlist_name,
-        "description": "A playlist generated by the Flask app",
+        "description": "A playlist generated by \"Playlist Generator for Spotify\"",
         "public": False
     }
-
     create_playlist_response = post(
         f"{api_base_url}users/{user_id}/playlists",
         headers=headers,
         json=create_playlist_body
     )
-
     if create_playlist_response.status_code != 201:
         return jsonify({"error": "Failed to create playlist"}), 400
 
-    playlist = create_playlist_response.json()
-    playlist_id = playlist.get('id')
+    created_playlist = create_playlist_response.json()
+    playlist_id = created_playlist.get("id")
 
-    # Add tracks to the playlist
-    track_uris = [track['uri'] for track in final_playlist]
-    chunk_size = 100  # Spotify API allows adding up to 100 tracks at a time
+    track_uris = [track.get("uri") for track in playlist if track.get("uri")]
+    if not track_uris:
+        return jsonify({"error": "No valid track URIs found in the playlist"}), 400
+
+    chunk_size = 100
     for i in range(0, len(track_uris), chunk_size):
         chunk = track_uris[i:i + chunk_size]
         add_tracks_response = post(
@@ -243,12 +270,15 @@ def export_playlist():
         )
         if add_tracks_response.status_code != 201:
             return jsonify({"error": "Failed to add tracks to playlist"}), 400
+        
+    # Clear playlist after successful export
+    session.pop("playlist", None)
 
-    # Respond with success and playlist link
     return jsonify({
         "message": "Playlist created successfully!",
-        "playlist_url": playlist.get('external_urls', {}).get('spotify', '#')
+        "playlist_url": created_playlist.get("external_urls", {}).get("spotify", "#")
     })
+
 
     
 
@@ -256,8 +286,11 @@ def export_playlist():
 
 
 # Home route
-@app.route("/", methods=["GET", "POST"])
+@app.route("/start", methods=["GET", "POST"])
 def index():
+    session.pop("selected_artists", None)  # Reset selected artists in session
+    session.pop("playlist", None)  # Reset playlist
+
     if request.method == "POST":
         query = request.form.get("content", "")
         if not query:
@@ -277,5 +310,23 @@ def index():
         ]
         return render_template("index.html", artists=artists)
     return render_template("index.html")
+
+
+@app.route("/")
+def home():
+    """Landing page with options to start."""
+    session.pop("playlist", None)  # Remove playlist from session
+    return render_template("home.html")
+
+
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
     app.run(debug=True)

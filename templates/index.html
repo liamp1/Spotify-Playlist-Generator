@@ -13,7 +13,7 @@
         <h1>Playlist Generator for Spotify</h1>
 
         <!-- Search Form -->
-        <form action="/" method = "POST">
+        <form action="/start" method = "POST">
             <span class="search-icon material-symbols-outlined">search</span>
             <input class="search-input" type="search" name="content" id="content" placeholder="What are you looking for?">
         </form>
@@ -46,19 +46,27 @@
         <div class="popup" id="popup">
             <h3>Selected Artists</h3>
             <ul id="selectedArtists"></ul>
-            <button onclick="createPlaylist()">Create Playlist</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button id="createPlaylistButton" onclick="createPlaylist()">Create Playlist</button>
+                <div id="loadingSpinner" class="spinner hidden"></div>
+            </div>
         </div>
+        
 
         <!-- Playlist Section -->
         <div class="playlist" id="playlist">
             <div class="playlist-header">
                 <h2>Your Playlist</h2>
-                <button class="export-button" onclick="window.location.href='/login'">Export Playlist</button>
-
+                <button class="export-button" onclick="exportPlaylist()">Export Playlist</button>
             </div>
             <div id="playlistItems"></div>
         </div>
 
+        <!-- Popup Notification -->
+    <div id="popupNotification" class="popup-notification hidden">
+        <span id="popupMessage"></span>
+        <a id="popupLink" href="#" target="_blank" class="popup-link">View Playlist</a>
+    </div>
 
     </div>
 
@@ -84,8 +92,15 @@
             }
         }
 
-        // update the popup display
+        // Clear selected artists from localStorage on page load
+        window.onload = function () {
+            localStorage.removeItem("selectedArtists");
+            updatePopup(); // Ensure the popup UI is updated accordingly
+        };
+
+        // Update the popup to reflect the current state
         function updatePopup() {
+            const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
             const popupList = document.getElementById("selectedArtists");
             popupList.innerHTML = "";
             selectedArtists.forEach(artist => {
@@ -98,32 +113,95 @@
             });
         }
 
-        // populate the popup on page load
-        window.onload = function () {
-            updatePopup();
-        };
 
         // create playlist
         async function createPlaylist() {
-            if (selectedArtists.length === 0) {
-                alert("Please select at least one artist!");
-                return;
+            const createButton = document.getElementById("createPlaylistButton");
+            const spinner = document.getElementById("loadingSpinner");
+
+            try {
+                // Show spinner and disable the button
+                spinner.classList.remove("hidden");
+                createButton.disabled = true;
+
+                if (selectedArtists.length === 0) {
+                    alert("Please select at least one artist!");
+                    return;
+                }
+
+                const artistIds = selectedArtists.map(artist => artist.id);
+                const response = await fetch("/create_playlist", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ artist_ids: artistIds }),
+                });
+
+                const data = await response.json();
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    displayPlaylist(data.playlist);
+                }
+            } catch (error) {
+                console.error("Error creating playlist:", error);
+
+                showPopupNotification("Failed to create playlist. Please try again.");
+            } finally {
+                // Hide spinner and enable the button
+                spinner.classList.add("hidden");
+                createButton.disabled = false;
             }
+        }
 
-            const artistIds = selectedArtists.map(artist => artist.id);
-            const response = await fetch("/create_playlist", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ artist_ids: artistIds })
-            });
+        async function exportPlaylist() {
+            try {
+                const response = await fetch("/export_playlist");
+                const data = await response.json();
 
-            const data = await response.json();
-            console.log("Playlist data:", data.playlist); // log the playlist data
-            if (data.error) {
-                alert(data.error);
+                if (response.status == 400 && data.error == "No playlist available to export") {
+                    showPopupNotification("No playlist available to export");
+                }
+                else if (data.error) {
+                    alert(`Error: ${data.error}`);
+                    if (data.error.includes("login")) {
+                        window.location.href = "/login";
+                    }
+                } else if (data.message && data.playlist_url) {
+                    showPopupNotification(data.message, data.playlist_url);
+                } else {
+                    alert("An unknown error occurred while exporting the playlist.");
+                }
+            } catch (error) {
+                console.error("Error exporting playlist:", error);
+                alert("Failed to export the playlist. Please try again.");
+            }
+        }
+
+        function showPopupNotification(message, url = null) {
+            const popup = document.getElementById("popupNotification");
+            const popupMessage = document.getElementById("popupMessage");
+            const popupLink = document.getElementById("popupLink");
+
+            // Update message
+            popupMessage.textContent = message;
+
+            // Conditionally display or hide the link
+            if (url) {
+                popupLink.href = url;
+                popupLink.style.display = "inline"; // Show the link if a URL is provided
             } else {
-                displayPlaylist(data.playlist);
+                popupLink.style.display = "none"; // Hide the link if no URL is provided
             }
+
+            // Show popup
+            popup.classList.remove("hidden");
+            popup.classList.add("visible");
+
+            // Hide popup after 5 seconds
+            setTimeout(() => {
+                popup.classList.remove("visible");
+                popup.classList.add("hidden");
+            }, 7000);
         }
 
 
@@ -173,7 +251,7 @@
             }
         }
 
-
+        
 
 
 
