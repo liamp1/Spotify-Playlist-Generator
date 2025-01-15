@@ -31,7 +31,11 @@
                 <div class="result">
                     <div class="image-container">
                         <img src="{{ artist.image }}" alt="{{ artist.name }}" class="artist-image">
-                        <span class="select-icon material-symbols-outlined" onclick="toggleIcon(this, '{{ artist.name }}', '{{ artist.id }}')">add_circle</span>
+                        <span class="select-icon material-symbols-outlined"
+                              data-id="{{ artist.id }}"
+                              onclick="toggleIcon(this, '{{ artist.name }}', '{{ artist.id }}')">
+                            add_circle
+                        </span>
                     </div>
                     <p class="title">{{ artist.name }}</p>
                 </div>
@@ -90,28 +94,54 @@
 
         // add artist to the list
         function addArtist(name, id) {
-            if (!selectedArtists.find(artist => artist.id === id)) {
+            let selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
+
+            // Prevent duplicate entries
+            if (!selectedArtists.some(artist => artist.id === id)) {
                 selectedArtists.push({ name, id });
-                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // persist in localStorage
-                updatePopup();  // ensure the popup UI is updated accordingly
+                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // Persist in localStorage
+                updatePopup(); // Refresh the displayed list
+            }
+        }
+        function removeArtist(id) {
+            let selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
+
+            // Find and remove the artist with the matching ID
+            selectedArtists = selectedArtists.filter(artist => artist.id !== id);
+
+            // Update localStorage with the modified list
+            localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists));
+
+            // Update the popup display
+            updatePopup();
+
+            // Find the artist's icon in the DOM and reset it
+            const iconElement = document.querySelector(`.select-icon[data-id="${id}"]`);
+            if (iconElement) {
+                iconElement.textContent = 'add_circle';
+                iconElement.style.color = ''; // Reset to default color
+                iconElement.style.fontVariationSettings = "'FILL' 0"; // Outline variant
             }
         }
 
-        // remove artist from the list
-        function removeArtist(id) {
-            const index = selectedArtists.findIndex(artist => artist.id === id);
-            if (index !== -1) {
-                selectedArtists.splice(index, 1);
-                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // update localStorage
-                updatePopup();  // ensure the popup UI is updated accordingly
-            }
-        }
 
         // clear selected artists from localStorage on page load
         window.onload = function () {
-            localStorage.removeItem("selectedArtists");
-            updatePopup(); // ensure the popup UI is updated accordingly
+            const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
+
+            // Update all artist icons based on `selectedArtists`
+            selectedArtists.forEach(artist => {
+                const iconElement = document.querySelector(`.select-icon[data-id="${artist.id}"]`);
+                if (iconElement) {
+                    iconElement.textContent = 'check_circle';
+                    iconElement.style.color = '#1ed760'; // Green color
+                    iconElement.style.fontVariationSettings = "'FILL' 1"; // Filled variant
+                }
+            });
+
+            updatePopup(); // Ensure the popup UI reflects the stored list
         };
+
 
         // window.onload = () => {
         //     const notification = "{{ session.get('notification') }}";
@@ -122,11 +152,17 @@
         //     }
         // };
 
-        // update the popup to reflect the current state
+        // update the selected artists window to reflect the current state
         function updatePopup() {
             const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
             const popupList = document.getElementById("selectedArtists");
             popupList.innerHTML = "";
+
+            if (selectedArtists.lenngth === 0) {
+                popupList.innerHTML = "<p>No artists selected yet.</p>"
+                return;
+            }
+
             selectedArtists.forEach(artist => {
                 const li = document.createElement("li");
                 li.innerHTML = `
@@ -137,6 +173,14 @@
             });
         }
 
+        // Example: No need to clear localStorage during a search
+        document.querySelector("form").addEventListener("submit", function () {
+            // Perform search logic here without resetting localStorage
+            const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
+            localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // Ensure list persists
+        });
+
+
         // create playlist
         async function createPlaylist() {
             const createButton = document.getElementById("createPlaylistButton");
@@ -146,14 +190,19 @@
                 // Show spinner and disable the button
                 spinner.classList.remove("hidden");
                 createButton.disabled = true;
+                
+                // retrieve selected artists from localStorage
+                const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
 
                 // Check if any artists are selected
                 if (selectedArtists.length === 0) {
                     showPopupNotification("Please select at least one artist!");
                     return; // Stop further execution
                 }
-
+                
+                // extract artist IDs from selected artists
                 const artistIds = selectedArtists.map(artist => artist.id);
+                
                 const response = await fetch("/create_playlist", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -183,33 +232,36 @@
 
 
         async function exportPlaylist() {
+            const exportButton = document.querySelector('.export-button');
+
             try {
-                const response = await fetch("/export_playlist", {
-                    method: "GET",
-                    redirect: "manual", // Ensure redirects are detected
+                exportButton.disabled = true;
+
+                const response = await fetch('/export_playlist', {
+                    method: 'GET',
                 });
 
-                if (response.type === "opaqueredirect") {
-                    // Redirect to Spotify manually
-                    window.location.href = response.url;
-                    return;
-                } 
-
-                if (response.redirected) {
-                    window.location.href = response.url;
-                    return;
-                }
-
-                const data = await response.json();
-                if (data.error) {
-                    showPopupNotification(`Error: ${data.error}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.playlist_url) {
+                        showPopupNotification(`Playlist exported successfully! <a href="${data.playlist_url}" target="_blank">View Playlist</a>`);
+                    } else {
+                        showPopupNotification('Failed to export playlist. Please try again.');
+                    }
+                } else if (response.status === 401) {
+                    // Redirect to login while preserving state
+                    window.location.href = '/login';
                 } else {
-                    showPopupNotification("Playlist exported successfully!");
+                    showPopupNotification('Failed to export playlist. Please try again.');
                 }
             } catch (error) {
-                console.error("Error exporting playlist:", error);
+                console.error('Error exporting playlist:', error);
+                showPopupNotification('An unexpected error occurred. Please try again.');
+            } finally {
+                exportButton.disabled = false;
             }
         }
+
 
 
 
@@ -269,24 +321,22 @@
 
 
         function toggleIcon(element, name, id) {
-            if (element.textContent === 'add_circle') {
-                // change icon to filled check_circle and make it green
-                element.textContent = 'check_circle';
-                element.style.color = '#1ed760';
-                element.style.fontVariationSettings = "'FILL' 1"; // filled variant
+            const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
+            const artistExists = selectedArtists.find(artist => artist.id === id);
 
-                // add artist to the list
-                addArtist(name, id);
-            } else {
-                // change icon back to unfilled add_circle
-                element.textContent = 'add_circle';
-                element.style.color = ''; // Revert to default
-                element.style.fontVariationSettings = "'FILL' 0"; // outline variant
-
-                // remove artist from the list
+            if (artistExists) {
+                // Artist is already selected, remove them
                 removeArtist(id);
+            } else {
+                // Artist is not selected, add them
+                element.textContent = 'check_circle';
+                element.style.color = '#1ed760'; // Green color
+                element.style.fontVariationSettings = "'FILL' 1"; // Filled variant
+
+                addArtist(name, id);
             }
         }
+
     </script>
 </body>
 </html>

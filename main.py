@@ -109,7 +109,10 @@ def callback():
 
         # Redirect to the page specified before login
         redirect_url = session.pop("redirect_after_login", "/start")
-        return redirect(redirect_url)
+        preserve_state = session.pop("preserve_state", False)
+
+        if preserve_state:
+            return redirect(redirect_url)
 
     return redirect("/start")
 
@@ -235,10 +238,18 @@ def export_playlist():
     access_token = session.get("access_token")
     if not access_token:
         # Save the redirect path and redirect to login
-        session["redirect_after_login"] = "/export_playlist"
-        # session.modified = True  # Ensure session changes are saved
+        session["redirect_after_login"] = "/start"
+        session["preserved_state"] = True
+        session.modified = True  # Ensure session changes are saved
         # print(f"Redirecting to login. Playlist in session: {playlist}")
-        return redirect("/login")
+        return jsonify({"error": "Please log in to export the playlist."}), 401
+
+    # check if playlist has already been exported
+    if "exported_playlist_id" in session:
+        playlist_id = session["exported_playlist_id"]
+        playlist_url = f"https://open.spotify.com/playlist/{playlist_id}"
+        return jsonify({"playlist_url": playlist_url}), 200
+
 
     # if user is logged in, proceed to export playlist
     headers = get_auth_header(access_token)
@@ -269,6 +280,8 @@ def export_playlist():
     playlist_id = created_playlist.get("id")    # grab id of playlist
     playlist_url = created_playlist.get("external_urls", {}).get("spotify", "#")
 
+    # store the playlist ID in sesssion to prevent duplicates
+    session["exported_playlist_id"] = playlist_id
 
     # insert all track uris to spotify playlist
     track_uris = [track.get("uri") for track in playlist if track.get("uri")]
@@ -296,7 +309,7 @@ def export_playlist():
     #     # "playlist_url": created_playlist.get("external_urls", {}).get("spotify", "#")
     # })
 
-    return redirect(f"/start?success=1&playlist_url={playlist_url}")
+    return jsonify({"playlist_url": playlist_url}), 200
 
 # home route
 @app.route("/start", methods=["GET", "POST"])
@@ -304,12 +317,12 @@ def index():
     playlist = session.get("playlist", [])  # Retrieve the playlist from the session
     success = request.args.get("success", default=None)
     playlist_url = request.args.get("playlist_url", default=None)
-    # logging.debug(f"Playlist in /start: {playlist}")
+    artists = session.get("artists", [])
 
     if request.method == "POST":
         query = request.form.get("content", "") # get user search input
         if not query:
-            return render_template("index.html", error="Please enter a search term.")
+            return render_template("index.html", error="Please enter a search term.", playlist=playlist, artists=artists, success=success, playlist_url=playlist_url)
 
         token = get_token()
         results = search_spotify(token, query)
@@ -323,6 +336,7 @@ def index():
             }
             for artist in results.get("artists", {}).get("items", [])
         ]
+        session["artists"] = artists    # store search results in session
         return render_template("index.html", artists=artists, playlist=playlist, success=success, playlist_url=playlist_url)
     return render_template("index.html", playlist=playlist, success=success, playlist_url=playlist_url)
 
