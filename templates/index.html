@@ -54,7 +54,7 @@
 
         <!-- playlist section -->
         <div class="playlist" id="playlist">
-            <div class="playlist-header">
+            <div class="playlist-header flex-container">
                 <h2>Your Playlist</h2>
                 <button class="export-button" onclick="exportPlaylist()">Export Playlist</button>
             </div>
@@ -112,6 +112,15 @@
             localStorage.removeItem("selectedArtists");
             updatePopup(); // ensure the popup UI is updated accordingly
         };
+
+        // window.onload = () => {
+        //     const notification = "{{ session.get('notification') }}";
+        //     if (notification) {
+        //         showPopupNotification(notification);
+        //         // Clear the notification after displaying it
+        //         fetch("/clear_notification", { method: "POST" });
+        //     }
+        // };
 
         // update the popup to reflect the current state
         function updatePopup() {
@@ -183,9 +192,19 @@
                 if (response.type === "opaqueredirect") {
                     // Redirect to Spotify manually
                     window.location.href = response.url;
+                    return;
+                } 
+
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.error) {
+                    showPopupNotification(`Error: ${data.error}`);
                 } else {
-                    const data = await response.json();
-                    console.log(data); // Debug information
+                    showPopupNotification("Playlist exported successfully!");
                 }
             } catch (error) {
                 console.error("Error exporting playlist:", error);
@@ -197,33 +216,31 @@
 
 
 
-        // pop up notification at the bottom
-        function showPopupNotification(message, url = null) {
-            const popup = document.getElementById("popupNotification");
-            const popupMessage = document.getElementById("popupMessage");
-            const popupLink = document.getElementById("popupLink");
+        
+        document.addEventListener("DOMContentLoaded", function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const success = urlParams.get("success");
+            const playlistUrl = urlParams.get("playlist_url");
 
-            // update message
-            popupMessage.textContent = message;
-
-            // conditionally display or hide the link
-            if (url) {
-                popupLink.href = url;
-                popupLink.style.display = "inline"; // show the link if a URL is provided
-            } else {
-                popupLink.style.display = "none"; // hide the link if no URL is provided
+            // only show notification if success is defined and equals "1"
+            if (success === "1" && playlistUrl) {
+                showPopupNotification(`Playlist exported successfully! <a href="${playlistUrl}" target="_blank">View on Spotify</a>`);
             }
+        });
 
-            // show popup
-            popup.classList.remove("hidden");
-            popup.classList.add("visible");
+        function showPopupNotification(message) {
+            const notification = document.createElement("div");
+            notification.className = "popup-notification";
+            notification.innerHTML = message;
 
-            // hide popup after 6 seconds
+            document.body.appendChild(notification);
+
             setTimeout(() => {
-                popup.classList.remove("visible");
-                popup.classList.add("hidden");
-            }, 6000);
+                notification.remove();
+            }, 5000);
         }
+
+
 
         // display playlist on the page
         function displayPlaylist(playlist) {

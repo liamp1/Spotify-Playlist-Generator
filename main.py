@@ -9,8 +9,8 @@ import urllib.parse
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
 
 # flask app initialization
 app = Flask(__name__)
@@ -20,7 +20,7 @@ load_dotenv()
 client_id = os.getenv("CLIENT_ID")  # client_id for spotify api
 client_secret = os.getenv("CLIENT_SECRET")  # client_secret for spotify api
 app.secret_key = os.getenv("SECRET_KEY")    # secret key for flask app
-redirect_uri = "http://localhost:5000/callback" # redirect uri 
+redirect_uri = "http://127.0.0.1:5000/callback" # redirect uri 
 auth_url = "https://accounts.spotify.com/authorize"
 api_base_url = "https://api.spotify.com/v1/"
 token_url = "https://accounts.spotify.com/api/token"
@@ -267,6 +267,8 @@ def export_playlist():
 
     created_playlist = create_playlist_response.json()
     playlist_id = created_playlist.get("id")    # grab id of playlist
+    playlist_url = created_playlist.get("external_urls", {}).get("spotify", "#")
+
 
     # insert all track uris to spotify playlist
     track_uris = [track.get("uri") for track in playlist if track.get("uri")]
@@ -286,19 +288,23 @@ def export_playlist():
         if add_tracks_response.status_code != 201:
             return jsonify({"error": "Failed to add tracks to playlist"}), 400
         
-    # clear playlist after successful export
-    session.pop("playlist", None)
+    # # clear playlist after successful export
+    # session.pop("playlist", None)
 
-    return jsonify({
-        "message": "Playlist exported successfully!",
-        # "playlist_url": created_playlist.get("external_urls", {}).get("spotify", "#")
-    })
+    # return jsonify({
+    #     "message": "Playlist exported successfully!",
+    #     # "playlist_url": created_playlist.get("external_urls", {}).get("spotify", "#")
+    # })
+
+    return redirect(f"/start?success=1&playlist_url={playlist_url}")
 
 # home route
 @app.route("/start", methods=["GET", "POST"])
 def index():
     playlist = session.get("playlist", [])  # Retrieve the playlist from the session
-    logging.debug(f"Playlist in /start: {playlist}")
+    success = request.args.get("success", default=None)
+    playlist_url = request.args.get("playlist_url", default=None)
+    # logging.debug(f"Playlist in /start: {playlist}")
 
     if request.method == "POST":
         query = request.form.get("content", "") # get user search input
@@ -317,8 +323,8 @@ def index():
             }
             for artist in results.get("artists", {}).get("items", [])
         ]
-        return render_template("index.html", artists=artists, playlist=playlist)
-    return render_template("index.html", playlist=playlist)
+        return render_template("index.html", artists=artists, playlist=playlist, success=success, playlist_url=playlist_url)
+    return render_template("index.html", playlist=playlist, success=success, playlist_url=playlist_url)
 
 # landing page
 @app.route("/")
