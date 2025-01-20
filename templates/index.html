@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-    <title>Spotify Search</title>
+    <title>Playlist Generator for Spotify</title>
 </head>
     
 <body>
     <div class="content">
-        <h1>Spotify Playlist Generator</h1>
+        <h1>Playlist Generator for Spotify</h1>
 
-        <!-- Search Form -->
-        <form action="/" method = "POST">
+        <!-- search bar -->
+        <form action="/start" method = "POST">
             <span class="search-icon material-symbols-outlined">search</span>
             <input class="search-input" type="search" name="content" id="content" placeholder="What are you looking for?">
         </form>
@@ -22,7 +22,7 @@
         <p style="color: red;">{{ error }}</p>
         {% endif %}
 
-        <!-- Results Section -->
+        <!-- results section -->
         <div class="results">
             {% if artists %}
             <h2>Artists</h2>
@@ -31,7 +31,11 @@
                 <div class="result">
                     <div class="image-container">
                         <img src="{{ artist.image }}" alt="{{ artist.name }}" class="artist-image">
-                        <span class="select-icon material-symbols-outlined" onclick="toggleIcon(this, '{{ artist.name }}', '{{ artist.id }}')">add_circle</span>
+                        <span class="select-icon material-symbols-outlined"
+                              data-id="{{ artist.id }}"
+                              onclick="toggleIcon(this, '{{ artist.name }}', '{{ artist.id }}')">
+                            add_circle
+                        </span>
                     </div>
                     <p class="title">{{ artist.name }}</p>
                 </div>
@@ -41,20 +45,48 @@
             {% endif %}
         </div>
 
-
-        <!-- Popup for selected artists -->
+        <!-- window for selected artists -->
         <div class="popup" id="popup">
             <h3>Selected Artists</h3>
             <ul id="selectedArtists"></ul>
-            <button onclick="createPlaylist()">Create Playlist</button>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button id="createPlaylistButton" onclick="createPlaylist()">Generate Playlist</button>
+                <div id="loadingSpinner" class="spinner hidden"></div>
+            </div>
         </div>
+        
 
-        <!-- Playlist Section -->
+        <!-- playlist section -->
         <div class="playlist" id="playlist">
-            <h2>Your Playlist</h2>
-            <div id="playlistItems"></div>
+            <div class="playlist-header flex-container">
+                <h2>Your Playlist</h2>
+                <button class="export-button" onclick="exportPlaylist()">Export Playlist</button>
+            </div>
+            <div id="playlistItems">
+                {% if playlist %}
+                    {% for track in playlist %}
+                        <div class="playlist-item">
+                            <img src="{{ track.image or 'https://via.placeholder.com/100' }}" alt="{{ track.album }}" class="playlist-image">
+                            <div class="playlist-info">
+                                <p class="playlist-title">{{ track.name }}</p>
+                                <p class="playlist-artist">{{ track.artist }}</p>
+                                <p class="playlist-album">{{ track.album }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No playlist available. Start by searching for artists!</p>
+                {% endif %}
+            </div>
         </div>
 
+        
+
+        <!-- popup notification -->
+        <div id="popupNotification" class="popup-notification hidden">
+            <span id="popupMessage"></span>
+            <a id="popupLink" href="#" target="_blank" class="popup-link">View Playlist</a>
+        </div>
     </div>
 
     <script>
@@ -62,27 +94,75 @@
 
         // add artist to the list
         function addArtist(name, id) {
-            if (!selectedArtists.find(artist => artist.id === id)) {
+            let selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
+
+            // Prevent duplicate entries
+            if (!selectedArtists.some(artist => artist.id === id)) {
                 selectedArtists.push({ name, id });
-                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // persist in localStorage
-                updatePopup();
+                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // Persist in localStorage
+                updatePopup(); // Refresh the displayed list
             }
         }
-
-        // remove artist from the list
         function removeArtist(id) {
-            const index = selectedArtists.findIndex(artist => artist.id === id);
-            if (index !== -1) {
-                selectedArtists.splice(index, 1);
-                localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // update localStorage
-                updatePopup();
+            let selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
+
+            // Find and remove the artist with the matching ID
+            selectedArtists = selectedArtists.filter(artist => artist.id !== id);
+
+            // Update localStorage with the modified list
+            localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists));
+
+            // Update the popup display
+            updatePopup();
+
+            // Find the artist's icon in the DOM and reset it
+            const iconElement = document.querySelector(`.select-icon[data-id="${id}"]`);
+            if (iconElement) {
+                iconElement.textContent = 'add_circle';
+                iconElement.style.color = ''; // Reset to default color
+                iconElement.style.fontVariationSettings = "'FILL' 0"; // Outline variant
             }
         }
 
-        // update the popup display
+
+        // clear selected artists from localStorage on page load
+        window.onload = function () {
+            const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
+
+            // Update all artist icons based on `selectedArtists`
+            selectedArtists.forEach(artist => {
+                const iconElement = document.querySelector(`.select-icon[data-id="${artist.id}"]`);
+                if (iconElement) {
+                    iconElement.textContent = 'check_circle';
+                    iconElement.style.color = '#1ed760'; // Green color
+                    iconElement.style.fontVariationSettings = "'FILL' 1"; // Filled variant
+                }
+            });
+
+            updatePopup(); // Ensure the popup UI reflects the stored list
+        };
+
+
+        // window.onload = () => {
+        //     const notification = "{{ session.get('notification') }}";
+        //     if (notification) {
+        //         showPopupNotification(notification);
+        //         // Clear the notification after displaying it
+        //         fetch("/clear_notification", { method: "POST" });
+        //     }
+        // };
+
+        // update the selected artists window to reflect the current state
         function updatePopup() {
+            const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
             const popupList = document.getElementById("selectedArtists");
             popupList.innerHTML = "";
+
+            if (selectedArtists.lenngth === 0) {
+                popupList.innerHTML = "<p>No artists selected yet.</p>"
+                return;
+            }
+
             selectedArtists.forEach(artist => {
                 const li = document.createElement("li");
                 li.innerHTML = `
@@ -93,33 +173,125 @@
             });
         }
 
-        // populate the popup on page load
-        window.onload = function () {
-            updatePopup();
-        };
+        // Example: No need to clear localStorage during a search
+        document.querySelector("form").addEventListener("submit", function () {
+            // Perform search logic here without resetting localStorage
+            const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
+            localStorage.setItem("selectedArtists", JSON.stringify(selectedArtists)); // Ensure list persists
+        });
+
 
         // create playlist
         async function createPlaylist() {
-            if (selectedArtists.length === 0) {
-                alert("Please select at least one artist!");
-                return;
-            }
+            const createButton = document.getElementById("createPlaylistButton");
+            const spinner = document.getElementById("loadingSpinner");
 
-            const artistIds = selectedArtists.map(artist => artist.id);
-            const response = await fetch("/create_playlist", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ artist_ids: artistIds })
-            });
+            try {
+                // Show spinner and disable the button
+                spinner.classList.remove("hidden");
+                createButton.disabled = true;
+                
+                // retrieve selected artists from localStorage
+                const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
 
-            const data = await response.json();
-            console.log("Playlist data:", data.playlist); // log the playlist data
-            if (data.error) {
-                alert(data.error);
-            } else {
-                displayPlaylist(data.playlist);
+                // Check if any artists are selected
+                if (selectedArtists.length === 0) {
+                    showPopupNotification("Please select at least one artist!");
+                    return; // Stop further execution
+                }
+                
+                // extract artist IDs from selected artists
+                const artistIds = selectedArtists.map(artist => artist.id);
+                
+                const response = await fetch("/create_playlist", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ artist_ids: artistIds }),
+                });
+
+                const data = await response.json();
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    displayPlaylist(data.playlist);
+                }
+            } catch (error) {
+                console.error("Error creating playlist:", error);
+                showPopupNotification("Failed to create playlist. Please try again.");
+            } finally {
+                // Hide spinner and enable the button
+                spinner.classList.add("hidden");
+                createButton.disabled = false;
+
+                // Only show "Playlist created successfully!" if a playlist was actually created
+                if (selectedArtists.length > 0) {
+                    showPopupNotification("Playlist created successfully!");
+                }
             }
         }
+
+
+        async function exportPlaylist() {
+            const exportButton = document.querySelector('.export-button');
+
+            try {
+                exportButton.disabled = true;
+
+                const response = await fetch('/export_playlist', {
+                    method: 'GET',
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.playlist_url) {
+                        showPopupNotification(`Playlist exported successfully! <a href="${data.playlist_url}" target="_blank">View Playlist</a>`);
+                    } else {
+                        showPopupNotification('Failed to export playlist. Please try again.');
+                    }
+                } else if (response.status === 401) {
+                    // Redirect to login while preserving state
+                    window.location.href = '/login';
+                } else {
+                    showPopupNotification('Failed to export playlist. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error exporting playlist:', error);
+                showPopupNotification('An unexpected error occurred. Please try again.');
+            } finally {
+                exportButton.disabled = false;
+            }
+        }
+
+
+
+
+
+
+
+        
+        document.addEventListener("DOMContentLoaded", function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const success = urlParams.get("success");
+            const playlistUrl = urlParams.get("playlist_url");
+
+            // only show notification if success is defined and equals "1"
+            if (success === "1" && playlistUrl) {
+                showPopupNotification(`Playlist exported successfully! <a href="${playlistUrl}" target="_blank">View on Spotify</a>`);
+            }
+        });
+
+        function showPopupNotification(message) {
+            const notification = document.createElement("div");
+            notification.className = "popup-notification";
+            notification.innerHTML = message;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
 
 
         // display playlist on the page
@@ -132,7 +304,6 @@
                 return;
             }
 
-            // display each track
             playlist.forEach(track => {
                 const div = document.createElement("div");
                 div.classList.add("playlist-item");
@@ -148,36 +319,24 @@
             });
         }
 
+
         function toggleIcon(element, name, id) {
-            if (element.textContent === 'add_circle') {
-                // change icon to filled check_circle and make it green
-                element.textContent = 'check_circle';
-                element.style.color = '#1ed760';
-                element.style.fontVariationSettings = "'FILL' 1"; // filled variant
+            const selectedArtists = JSON.parse(localStorage.getItem("selectedArtists")) || [];
+            const artistExists = selectedArtists.find(artist => artist.id === id);
 
-                // add artist to the list
-                addArtist(name, id);
-            } else {
-                // change icon back to unfilled add_circle
-                element.textContent = 'add_circle';
-                element.style.color = ''; // Revert to default
-                element.style.fontVariationSettings = "'FILL' 0"; // outline variant
-
-                // remove artist from the list
+            if (artistExists) {
+                // Artist is already selected, remove them
                 removeArtist(id);
+            } else {
+                // Artist is not selected, add them
+                element.textContent = 'check_circle';
+                element.style.color = '#1ed760'; // Green color
+                element.style.fontVariationSettings = "'FILL' 1"; // Filled variant
+
+                addArtist(name, id);
             }
         }
 
-
-
-
-
-
-
-
     </script>
-
-
-
 </body>
 </html>

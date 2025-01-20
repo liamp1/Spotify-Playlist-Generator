@@ -9,14 +9,14 @@ body {
     color: #FFFFFF;
 }
 
-/* Spotify Search header*/
+/* spotify search header*/
 h1 {
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-/* Artists Section header*/
+/* artists section header*/
 h2 {
     display: flex;
     justify-content: left;
@@ -26,14 +26,17 @@ h2 {
 /* search bar styling */
 form {
     --padding: 14px; 
-
-    
     display:flex;
     align-items: center;
+    justify-content: center;
+    margin: 0 auto;
     padding: var(--padding);
     border-radius: 28px;
     background: #1F1F1F;
     transition: background 0.5s, border-color 0.5s;
+
+    height: 25px;
+    width: 800px;
 
 }
 
@@ -53,7 +56,8 @@ form:focus-within {
     outline: none;
     border: none;
     background: transparent;
-    width: 300px;
+    flex-grow: 1;
+    height: 100%;
 }
 
 /* search icon styling */
@@ -62,13 +66,12 @@ form:focus-within {
 }
 
 
-
-
 /* grid layout for displaying artist results */
 .results-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
+    justify-content: center;
 }
 
 /* artist result image container */
@@ -111,7 +114,7 @@ form:focus-within {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background: #1F1F1F;
+    background: #1f1f1f;
     color: white;
     padding: 15px;
     border-radius: 10px;
@@ -142,32 +145,35 @@ form:focus-within {
 
 /* button inside popup */
 .popup button {
-    background: #1ed760;
+    background: #2a2a2a;
     color: white;
     border: none;
     padding: 5px 10px;
-    border-radius: 5px;
+    border-radius: 20px;
     cursor: pointer;
 }
 
 /* hover effect for button inside popup */
 .popup button:hover {
-    background: #14833b;
+    background: #333333;
+    transition: 0.3s;
 }
 
-/* Playlist item styling */
+/* playlist item styling */
 .playlist-item {
     display: flex;
     align-items: center;
     gap: 15px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     padding: 10px;
     background: #1F1F1F;
-    border-radius: 10px;
+    border-radius: 15x;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    height: 75px;
 }
 
-/* Playlist image */
+/* playlist image */
 .playlist-item .playlist-image {
     width: 75px;
     height: 75px;
@@ -175,56 +181,97 @@ form:focus-within {
     border-radius: 5px;
 }
 
-/* Playlist information */
+/* playlist information */
 .playlist-item .playlist-info {
     display: flex;
     flex-direction: column;
     justify-content: center;
     color: #FFFFFF;
+    flex-grow: 1;
 }
 
-/* Title styling */
+/* song title styling */
 .playlist-info .playlist-title {
     font-size: 16px;
     font-weight: bold;
     margin: 0 0 5px;
 }
 
-/* Artist styling */
+/* artist title styling */
 .playlist-info .playlist-artist {
     font-size: 14px;
     color: #B2B2B2;
     margin: 0 0 3px;
 }
 
-/* Album styling */
+/* album title styling */
 .playlist-info .playlist-album {
     font-size: 14px;
     color: #666666;
     margin: 0;
 }
 
+.playlist-info .playlist-title, 
+.playlist-info .playlist-artist, 
+.playlist-info .playlist-album {
+    font-size: 14px; /* Fixed font size */
+    white-space: nowrap; /* Prevent text wrapping */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Show ellipsis for overflow */
+}
 
 
+
+
+/* playlist header styling */
+.playlist-header {
+    display: flex;
+    justify-content: space-between; /* spread the title and button */
+    align-items: center;
+    margin-bottom: 10px; 
+}
+
+/* Export Playlist button styling */
+.export-button {
+    background-color: #2a2a2a; 
+    color: #FFFFFF;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+/* Export Playlist button hover */
+.export-button:hover {
+    background-color: #333333; 
+    transition: 0.3s;
+}
+
+/* add circle icon */
 .add_circle{
     color: #b3b3b3;
 }
 
+/* add circle hover */
 .select-icon:hover{
-    transform: scale(1.1); /* Enlarge slightly */
+    transform: scale(1.1); /* enlarge slightly */
     color: #FFFFFF;
 }
 
+/* add artist select button next to artist image */
 .select-icon {
     position: absolute;
-    bottom: 0px; /* Position 10px from the bottom */
-    right: 0px; /* Position 10px from the right */
-    font-size: 24px; /* Icon size */
-    color: #B2B2B2; /* Default color */
-    background-color: #121212; /* Background for better visibility */
-    border-radius: 50%; /* Circular button */
+    bottom: 0px; 
+    right: 0px; 
+    font-size: 24px; 
+    color: #B2B2B2; 
+    background-color: #121212;
+    border-radius: 50%;
     cursor: pointer;
-    transition: transform 0.2s, background-color 0.3s, color 0.3s; /* Smooth transition */
+    transition: transform 0.2s, background-color 0.3s, color 0.3s;
 }
 
 .image-container {
@@ -235,7 +282,7 @@ form:focus-within {
     overflow: hidden; /* Prevent content overflow */
 }
 
-/* Style the artist image */
+/* style the artist image */
 .artist-image {
     width: 100%;
     height: 100%;
@@ -243,3 +290,90 @@ form:focus-within {
     border-radius: 10px;
 }
 
+/* buttons for Select Artists windows */
+.buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* landing page button */
+.btn {
+    background-color: #1ed762;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 18px;
+    transition: background-color 0.3s;
+}
+
+.btn:hover {
+    background-color: #7ade7c;
+}
+
+/* popup notification */
+.popup-notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #1ed762;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    z-index: 1000;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.popup-notification.hidden {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+    pointer-events: none;
+}
+
+.popup-notification.visible {
+    opacity: 1;
+    transform: translateX(-50%);
+}
+
+.popup-link {
+    color: white;
+    font-weight: bold;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.popup-link:hover {
+    text-decoration: none;
+}
+
+/* spinner styles */
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #1DB954; /* green color for the spinner */
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.hidden {
+    display: none; /* hide the spinner by default */
+}
+
+/* spinner animation */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
