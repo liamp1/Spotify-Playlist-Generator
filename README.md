@@ -30,7 +30,12 @@ Follow these steps to set up the application:
    git clone https://github.com/liamp1/Spotify-Playlist-Generator.git
    ```
 
-2. **Run the Application**
+2. **Install dependencies**
+   ```sh
+   pip install -r requirements.txt
+   ```
+
+3. **Run the Application**
    ```sh
    python main.py
    ```
