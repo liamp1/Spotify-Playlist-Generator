@@ -52,6 +52,7 @@ Follow these steps to set up the application:
 - Type the name of an artist in the search bar.
 - Press the **Add** button next to the artist you would like to select.
 - The selected artists will appear in the **Selected Artists** window on the bottom right.
+(https://i.imgur.com/xF1eQxt.jpeg)
 
 ### 3. Generating a Playlist
 - Press the **Generate Playlist** button in the **Selected Artists** window.
@@ -61,6 +62,7 @@ Follow these steps to set up the application:
   - Artist Name
   - Album Name
   - Album Cover
+(https://i.imgur.com/UmSWnJl.jpeg)
 
 ### 4. Exporting the Playlist to Spotify
 #### If you are already logged into Spotify:
@@ -72,6 +74,7 @@ Follow these steps to set up the application:
 - Clicking **Export Playlist** redirects you to Spotify’s login page.
 - After logging in, the app exports the playlist to your Spotify account.
 - A **popup notification** confirms the successful export with a direct link to the playlist.
+(https://i.imgur.com/KmLbRJR.jpeg)
 
 ### 5. Returning to the Search Page
 - After exporting, you are redirected back to the **Search** page with your playlist still visible.
